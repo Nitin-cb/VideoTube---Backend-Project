@@ -21,6 +21,7 @@ const generateAccessAndRefreshTokens=async(userId)=>{
         throw new ApiError(500,"Something went wrong while genrating refresh and access token")
     }
 }
+//............................
 //get user details from frontend
 //validation - not empty
 //check if user already exist:username ,email
@@ -155,8 +156,8 @@ const logoutUser=asyncHandler(async(req,res)=>{
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
-                refreshToken:undefined
+            $unset:{
+                refreshToken:1
             }
         },
         {
@@ -331,7 +332,7 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
         },
         {
             $lookup:{
-                from:"subscription",
+                from:"subscriptions",
                 localField:"_id",
                 foreignField:"channel",
                 as:"subscribers"
@@ -339,7 +340,7 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
         },
         {
             $lookup:{
-                from:"subscription",
+                from:"subscriptions",
                 localField:"_id",
                 foreignField:"subscriber",
                 as:"subscribedTo"
@@ -348,10 +349,12 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
         {
             $addFields:{
                 subscribersCount:{
-                    $size:"$subscribers"
+                    //$size:"$subscribers"
+                    $size: { $ifNull: ["$subscribers", []] }
                 },
                 channelsSubscribedToCount:{
-                    $size:"subscribedTo"
+                    // $size:"subscribedTo"
+                    $size: { $ifNull: ["$subscribedTo", []] }
                 },
                 isSubscribed:{
                     $cond:{
